@@ -1,12 +1,12 @@
 # مراجعة ترخيص Android SDK للحزم المطلوبة
 
-**تاريخ استخراج النص:** 2026-11-19. **حالة وقت استخراج النص:** لم يكن الترخيص قد قُبل بعد؛ هذا الملف يحفظ النص للمراجعة. لاحقًا، وافق المستخدم صراحة على قبول `android-sdk-license` وحده لتثبيت الحزم المحددة في Sandbox، وبقيت سبعة تراخيص أخرى غير مقبولة. وفي 2026-11-19 وافق المستخدم منفصلًا على إضافة hash هذا الترخيص وحده إلى runner GitHub Actions المؤقت للحزم نفسها؛ لا تُقبل التراخيص الأخرى هناك.
+**تاريخ استخراج النص:** 2026-11-19. **حالة وقت استخراج النص:** لم يكن الترخيص قد قُبل بعد؛ هذا الملف يحفظ النص للمراجعة. لاحقًا، وافق المستخدم صراحة على قبول `android-sdk-license` وحده لتثبيت الحزم المحددة في Sandbox، وبقيت سبعة تراخيص أخرى غير مقبولة. وفي 2026-11-19 وافق المستخدم منفصلًا على قبول هذا الترخيص وحده في runner GitHub Actions المؤقت للحزم نفسها؛ نُفذت الموافقة في تشغيل CI رقم [44737667246](https://github.com/zikoBoss/TeleManager/actions/runs/44737667246)، وسجل التشغيل أظهر `android-sdk-license` وحده في مجلد licenses. لم تُقبل التراخيص الأخرى.
 
 ## الحزم ومعرّف الترخيص
 
 استخرجت بيانات الحزم من [مستودع Android SDK الرسمي](https://dl.google.com/android/repository/repository2-1.xml). الحزم التي أجاز المستخدم تثبيتها هي `platforms;android-36` و`build-tools;36.1.0` و`platform-tools`؛ وتربط بيانات المستودع الرسمية كلًّا منها بالترخيص `android-sdk-license`. سجل hash المستخدم هو `24333f8a63b6825ea9c5514f83c2829b004d1fee`، وهو hash الملف المقبول محليًا.
 
-في المعاينة الأولى، عرض `sdkmanager --licenses` ثمانية تراخيص غير مقبولة ضمن المستودع المتاح، بينها `android-googletv-license` و`android-googlexr-license` الخاصان بإضافات غير مطلوبة. لم يُقبل أي ترخيص في تلك المعاينة. بعد ذلك وافق المستخدم على `android-sdk-license` وحده في Sandbox؛ ثُبتت الحزم الثلاث المحددة وبقيت التراخيص السبعة الأخرى غير مقبولة. ثم منح موافقة منفصلة لاستخدام hash `android-sdk-license` نفسه فقط في runner مؤقت لـGitHub Actions. يضيف workflow ذلك السجل منفردًا ولا يشغل `sdkmanager --licenses` أو أمر قبول جماعي. تفاصيل إصدارات SDK ونتائج Actions في [`ANDROID_SETUP.md`](ANDROID_SETUP.md) و[`GITHUB_ACTIONS.md`](GITHUB_ACTIONS.md).
+في المعاينة الأولى، عرض `sdkmanager --licenses` ثمانية تراخيص غير مقبولة ضمن المستودع المتاح، بينها `android-googletv-license` و`android-googlexr-license` الخاصان بإضافات غير مطلوبة. لم يُقبل أي ترخيص في تلك المعاينة. بعد ذلك وافق المستخدم على `android-sdk-license` وحده في Sandbox؛ ثُبتت الحزم الثلاث المحددة وبقيت التراخيص السبعة الأخرى غير مقبولة. ثم منح موافقة منفصلة لاستخدام hash `android-sdk-license` نفسه فقط في runner مؤقت لـGitHub Actions. نفذ workflow الموافقة في تشغيله الأول، وأظهر سجل التحقق اسم هذا الترخيص وحده. لا يشغل workflow `sdkmanager --licenses` أو أمر قبول جماعي. تفاصيل إصدارات SDK ونتائج Actions في [`ANDROID_SETUP.md`](ANDROID_SETUP.md) و[`GITHUB_ACTIONS.md`](GITHUB_ACTIONS.md).
 
 ## ملخص بنود مهمة للمراجعة
 

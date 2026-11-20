@@ -4,13 +4,13 @@
 
 ## حالة المشروع
 
-**المهمة 02 ما زالت مفتوحة، ولم يبدأ العمل في المهمة 03.** المستودع العام أُنشئ له commit تأسيسي `a70a106` على `main`، والعمل الحالي محصور في `task02-github-ci`؛ لن تُرفع تعديلات المهمة إلى `main`.
+**المهمة 02 ما زالت مفتوحة، ولم يبدأ العمل في المهمة 03.** أُنشئ commit تأسيسي `a70a106` على `main`. العمل اللاحق مرفوع على الفرع `task02-github-ci` عند commit `cac20ad`، ولم تُدمج أي تغييرات إلى `main`.
 
-المضيف الحالي Ubuntu 24.04 ARM64. ثُبتت Android SDK Command-line Tools (sdkmanager 22.0)، وكذلك `platforms;android-36` revision 2، و`build-tools;36.1.0`، و`platform-tools` 37.0.3. تحققنا من metadata، واجتاز `android.jar` فحص ZIP. لكن `adb` و`aapt` و`aapt2` ملفات Linux x86-64، فلم تُشغّل على ARM64. قُبل ترخيص `android-sdk-license` وحده بإذن المستخدم، وما زالت سبعة تراخيص أخرى غير مقبولة.
+اكتمل أول تشغيل فعلي لـGitHub Actions بنجاح كفحص لبيئة الأدوات على Ubuntu 24.04 x86-64. ثُبتت وتحققت حزم Android المستهدفة، وجرى تنزيل Flutter Stable 3.50.0 والتحقق من بصمته، كما نجح فحص Java وSDK. أظهر `flutter doctor -v` تحذيرات عن تراخيص Android الأخرى غير المقبولة وعن أدوات Linux desktop غير اللازمة لـAndroid؛ ولم تُخفَ هذه التحذيرات. [تفاصيل التشغيل](https://github.com/zikoBoss/TeleManager/actions/runs/44737667246)
 
-Flutter وDart غير متاحين محليًا على PATH. أظهر manifest الرسمي أن Flutter Stable 3.50.0 المتاح لـLinux هو x64 فقط؛ Dart المضمّن لا يعمل على مضيف ARM64. أُضيف workflow رسمي على Ubuntu x64 للتحقق من البيئة، لكن تحليل Flutter واختباراته وبناء APK لا تُنفذ إلا عند وجود `pubspec.yaml`. لا يوجد scaffold Flutter حتى الآن.
+المضيف المحلي Ubuntu 24.04 ARM64. Android SDK Command-line Tools مثبتة (`sdkmanager` 22.0)، وكذلك `platforms;android-36` revision 2، و`build-tools;36.1.0`، و`platform-tools` 37.0.3. تحققنا من metadata واجتاز `android.jar` فحص ZIP. لكن `adb` و`aapt` و`aapt2` ملفات Linux x86-64، فلم تُشغّل على ARM64. قُبل ترخيص `android-sdk-license` وحده محليًا، وما زالت تراخيص SDK أخرى غير مقبولة.
 
-أُنشئ workflow في [إعداد GitHub Actions](docs/GITHUB_ACTIONS.md) مع توثيق [بيئة البناء](docs/BUILD_ENVIRONMENT.md). نتائج تشغيله الفعلية وحالة التحليل والبناء محفوظة في [تقرير المهمة 02](docs/TASK02_STATUS_2026-11-19.md). لا تُعامل أي ميزة على أنها مكتملة قبل اختبارها فعليًا.
+Flutter وDart غير متاحين محليًا على PATH. لا يوجد scaffold Flutter أو `pubspec.yaml` في المستودع. لذلك لم تُنفذ `flutter analyze` أو `flutter test` ولم يُبن APK؛ تخطت GitHub Actions هذه الخطوات وأكدت السبب في السجل. نجاح فحص البيئة لا يعني أن TeleManager صار تطبيقًا قابلًا للبناء.
 
 ## التوجيه التقني المعتمد
 
@@ -24,15 +24,15 @@ Flutter وDart غير متاحين محليًا على PATH. أظهر manifest �
 
 1. اقرأ `PROJECT_RULES.md` ثم `docs/ARCHITECTURE.md` و`docs/INTERFACES.md` والوثيقة المتعلقة بالمهمة.
 2. اقرأ المخطط الكامل في `docs/MASTER_BLUEPRINT.md`.
-3. وفّر مضيف Linux x86-64 موثوقًا، ثم أنشئ scaffold Flutter رسميًا قابلًا للبناء وتحقق منه. لا تعتبر ملفات إعداد SDK الحالية إثباتًا لجهوزية Android build على ARM64.
+3. استمر في المهمة 02 بإنشاء scaffold Flutter رسمي قابل للبناء والتحقق منه على مضيف Linux x86-64 موثوق. لا تعتبر ملف CI أو تثبيت حزم SDK دليلًا على اكتمال التحليل أو بناء Android.
 4. قيّم TDLib/artifacts وبناء Android في مشروع تجريبي مستقل قبل تنفيذ المصادقة أو الرفع/التنزيل.
 5. حافظ على ترتيب المراحل وحالة الإنجاز في `TODO.md`. لا تدّع إكمال ميزة بلا اختبار ناجح.
 
 ## ملفات التوثيق
 
 - `docs/ANDROID_SETUP.md`: الحالة الفعلية لأدوات Android وFlutter وسلوك سكربت الإعداد.
-- `docs/TASK02_STATUS_2026-11-19.md`: تقرير المهمة 02 ودراسة GitHub Actions.
-- `docs/GITHUB_ACTIONS.md`: إعداد CI وإصدارات الأدوات ونطاق قبول Android SDK license.
+- `docs/TASK02_STATUS_2026-11-19.md`: تقرير المهمة 02 ونتائج تشغيل GitHub Actions.
+- `docs/GITHUB_ACTIONS.md`: إعداد CI وإصدارات الأدوات ونطاق قبول Android SDK license ونتيجة التشغيل.
 - `docs/BUILD_ENVIRONMENT.md`: الفرق بين أدوات Sandbox المحلية وبيئة GitHub runner.
 - `docs/FLUTTER_LINUX_ARM64_SUPPORT.md`: manifests الرسمية ونتيجة دعم Flutter Linux ARM64.
 - `docs/ANDROID_SDK_LICENSE_REVIEW.md`: نص الترخيص الذي قُبل وملخصه، مع حالة التراخيص الأخرى.
