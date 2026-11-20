@@ -4,7 +4,7 @@
 
 ## المرحلة 1 — تأسيس المشروع وتحليل المعمارية — مكتملة بإقرار المستخدم
 - [x] اعتماد المستخدم اكتمال التحليل والتوثيق والتأسيس الأولي.
-- [x] تهيئة مستودع Git محلي وإنشاء هيكل المجلدات الأولي الذي يحافظ على فصل TM-Core وTM-Cloud وTM-Sync وTM-Cache وTM-Transfer وTM-Backup وطبقة الواجهة ومزود Telegram. لا يوجد commit أو remote حتى الآن؛ لم يُنشأ مستودع GitHub، وما زال إنشاؤه ينتظر التأكيد.
+- [x] تهيئة مستودع Git المحلي وإنشاء هيكل المجلدات الأولي الذي يحافظ على فصل TM-Core وTM-Cloud وTM-Sync وTM-Cache وTM-Transfer وTM-Backup وطبقة الواجهة ومزود Telegram. بعد التحقق من خلو المستودع العام، أُنشئ commit تأسيسي `a70a106` على `main`؛ جميع تغييرات المهمة 02 التالية تخص الفرع `task02-github-ci` فقط.
 - [x] وضع المخطط المرجعي في `docs/MASTER_BLUEPRINT.md` وإنشاء `PROJECT_RULES.md`.
 - [x] توثيق حدود الوحدات والعقود والقيود والبوابات المرحلية.
 - [ ] تقييم تكامل TDLib على Android في مشروع تجريبي مستقل قبل بدء المصادقة أو عمليات التخزين.
@@ -13,11 +13,12 @@
 - [x] تثبيت Android SDK Command-line Tools الرسمية والتحقق من `sdkmanager --version` (22.0).
 - [x] تهيئة `ANDROID_HOME` و`ANDROID_SDK_ROOT` في `~/.bashrc` وإضافة `cmdline-tools/latest/bin` فقط إلى PATH على ARM64؛ التحقق من ظهور `sdkmanager` ومن عدم إضافة `adb` x86-64 إلى المسار.
 - [x] فحص manifests الرسمية لـ Flutter Stable 3.50.0 على Linux وmacOS وWindows؛ سجل Linux الوحيد x64 ولا يوجد Linux ARM64، مع توثيق جميع الملفات والبصمات في `docs/FLUTTER_LINUX_ARM64_SUPPORT.md`.
-- [ ] إعداد Flutter/Dart وتهيئة بيئة Android قابلة للبناء، وإنشاء مشروع Flutter فعلي بمنصة Android وطبقة `MainActivity.kt` بلغة Kotlin، مع إبقاء Core مستقلًا عن Android. لا يوجد scaffold. المضيف ARM64، بينما Dart داخل حزمة Flutter الرسمية التي فُحصت سابقًا كان ELF x86-64 وفشل تشغيله بـ `Exec format error`. توجد حزم SDK الثلاث المثبتة أدناه، لكن بعض أدواتها التنفيذية x86-64 وغير قابلة للتشغيل على ARM64. لا تتوفر في البيئة الحالية آلة Linux x86-64.
-- [ ] تشغيل `flutter analyze` و`flutter test` وتسجيل النتائج الفعلية، ثم بناء APK تجريبي على مضيف متوافق. قبول `android-sdk-license` تم في Sandbox الحالية فقط؛ سبعة تراخيص أخرى باقية غير مقبولة، وأي قبول مطلوب على runner خارجي يحتاج موافقة صريحة منفصلة.
+- [ ] إنشاء scaffold Flutter فعلي بمنصة Android وطبقة `MainActivity.kt` بلغة Kotlin، مع إبقاء Core مستقلًا عن Android. لا يوجد scaffold في الفرع. المضيف المحلي ARM64 ولا يستطيع تشغيل Dart الرسمي x64. أُعد workflow لاستخدام Ubuntu x64 في GitHub Actions، لكنه لا يحول ملفات الهيكل الحالية إلى تطبيق.
+- [ ] تشغيل `flutter analyze` و`flutter test` وتسجيل النتائج الفعلية، ثم بناء APK تجريبي. سيجري workflow هذه الخطوات فقط إذا وجد `pubspec.yaml`؛ وإلا تظهر كخطوات متخطاة بوضوح. وافق المستخدم منفصلًا على قبول `android-sdk-license` وحده على runner للحزم الثلاث؛ لا تقبل التراخيص الأخرى.
 - [x] تثبيت `platforms;android-36` revision 2 (API 36)، و`build-tools;36.1.0`، و`platform-tools` 37.0.3 بعد موافقة المستخدم على `android-sdk-license` وحده. تتفق إصدارات `sdkmanager --list_installed` و`source.properties` و`package.xml`؛ و`android.jar` يجتاز `unzip -t`. أظهر `file` أن `adb` و`aapt` و`aapt2` ELF x86-64، فلم تُشغّل على ARM64. حالة التثبيت لا تعني قابلية تشغيل أدواتها على هذا المضيف.
-- [ ] توثيق إصدار Flutter والأدوات المعتمدة في `docs/ANDROID_SETUP.md` وعدم تسجيل المهمة مكتملة قبل نجاح التحليل والاختبارات والبناء المطلوب.
-- [x] تثبيت حالة المهمة 02 وتدقيق اتساق الوثائق في [`docs/TASK02_STATUS_2026-11-19.md`](docs/TASK02_STATUS_2026-11-19.md) و`README.md` و`docs/ANDROID_SETUP.md` و`docs/FLUTTER_LINUX_ARM64_SUPPORT.md` و`docs/ANDROID_SDK_LICENSE_REVIEW.md`. GitHub Actions دراسة فقط؛ لم يُنشأ remote أو workflow ولم يُشغّل build. المهمة تبقى مفتوحة بانتظار بيئة بناء واختبار موثوقة.
+- [x] إنشاء `.github/workflows/android-ci.yml` على الفرع المخصص، وتوثيق الإعداد في `docs/GITHUB_ACTIONS.md` و`docs/BUILD_ENVIRONMENT.md`. إصدارات Flutter وJDK وActions مثبتة؛ نتيجة التشغيل الفعلية تسجل في تقرير المهمة بعد تنفيذ workflow.
+- [ ] توثيق نتائج Flutter وJava وAndroid SDK الفعلية في `docs/ANDROID_SETUP.md`. لا توجد إصدارات Gradle أو AGP أو Kotlin Gradle Plugin خاصة بالمشروع قبل إنشاء scaffold ومراجعته.
+- [ ] تحديث تقرير المهمة وREADME بعد تشغيل Actions؛ إبقاء المهمة 02 مفتوحة إذا بقي scaffold أو التحليل أو الاختبارات أو بناء APK غير منجز.
 - [ ] دراسة ربط TDLib عبر Android الأصلي/JNI أو آلية موثوقة قبل الالتزام بها.
 - [ ] تقييم الحزم الجاهزة لـ TDLib من حيث المصدر والترخيص والإصدار ودعم ABI وتوافق Android وسجل التحديث؛ إن لم يوجد خيار مناسب، توثيق وإعادة إنتاج بناء المصدر مع إصدار TDLib وNDK/CMake والأعلام وABI المدعومة.
 

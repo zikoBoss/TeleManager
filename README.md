@@ -4,13 +4,13 @@
 
 ## حالة المشروع
 
-**المهمة 02 مفتوحة ومتوقفة بانتظار بيئة بناء واختبار موثوقة؛ لم يبدأ العمل في المهمة 03.** المستودع المحلي مهيأ، لكن لا يوجد Git commit أو remote حتى الآن. لم يُنشأ مستودع GitHub أو workflow.
+**المهمة 02 ما زالت مفتوحة، ولم يبدأ العمل في المهمة 03.** المستودع العام أُنشئ له commit تأسيسي `a70a106` على `main`، والعمل الحالي محصور في `task02-github-ci`؛ لن تُرفع تعديلات المهمة إلى `main`.
 
 المضيف الحالي Ubuntu 24.04 ARM64. ثُبتت Android SDK Command-line Tools (sdkmanager 22.0)، وكذلك `platforms;android-36` revision 2، و`build-tools;36.1.0`، و`platform-tools` 37.0.3. تحققنا من metadata، واجتاز `android.jar` فحص ZIP. لكن `adb` و`aapt` و`aapt2` ملفات Linux x86-64، فلم تُشغّل على ARM64. قُبل ترخيص `android-sdk-license` وحده بإذن المستخدم، وما زالت سبعة تراخيص أخرى غير مقبولة.
 
-Flutter وDart غير متاحين حاليًا على PATH. أظهر التحقق السابق من manifest الرسمي لـ Flutter Stable 3.50.0 أن سجل Linux المتاح x64 فقط؛ وتوثق نتيجة الفحص السابقة أن Dart المضمّن كان x86-64 ولم يعمل على مضيف ARM64. لم يُنشأ scaffold Flutter، ولم تُشغّل `flutter analyze` أو `flutter test` أو Kotlin/Gradle، ولم يُبن APK.
+Flutter وDart غير متاحين محليًا على PATH. أظهر manifest الرسمي أن Flutter Stable 3.50.0 المتاح لـLinux هو x64 فقط؛ Dart المضمّن لا يعمل على مضيف ARM64. أُضيف workflow رسمي على Ubuntu x64 للتحقق من البيئة، لكن تحليل Flutter واختباراته وبناء APK لا تُنفذ إلا عند وجود `pubspec.yaml`. لا يوجد scaffold Flutter حتى الآن.
 
-دُرست GitHub Actions كخيار Linux x64 خارجي، لكن لم يُنشأ مستودع بعيد أو workflow ولم يُشغّل أي بناء. راجع [تقرير حالة المهمة 02](docs/TASK02_STATUS_2026-11-19.md) و[إعداد Flutter وAndroid](docs/ANDROID_SETUP.md) و[تحقق Flutter Linux ARM64](docs/FLUTTER_LINUX_ARM64_SUPPORT.md). لا تُعامل أي ميزة على أنها مكتملة قبل اختبارها فعليًا.
+أُنشئ workflow في [إعداد GitHub Actions](docs/GITHUB_ACTIONS.md) مع توثيق [بيئة البناء](docs/BUILD_ENVIRONMENT.md). نتائج تشغيله الفعلية وحالة التحليل والبناء محفوظة في [تقرير المهمة 02](docs/TASK02_STATUS_2026-11-19.md). لا تُعامل أي ميزة على أنها مكتملة قبل اختبارها فعليًا.
 
 ## التوجيه التقني المعتمد
 
@@ -32,6 +32,8 @@ Flutter وDart غير متاحين حاليًا على PATH. أظهر التحق
 
 - `docs/ANDROID_SETUP.md`: الحالة الفعلية لأدوات Android وFlutter وسلوك سكربت الإعداد.
 - `docs/TASK02_STATUS_2026-11-19.md`: تقرير المهمة 02 ودراسة GitHub Actions.
+- `docs/GITHUB_ACTIONS.md`: إعداد CI وإصدارات الأدوات ونطاق قبول Android SDK license.
+- `docs/BUILD_ENVIRONMENT.md`: الفرق بين أدوات Sandbox المحلية وبيئة GitHub runner.
 - `docs/FLUTTER_LINUX_ARM64_SUPPORT.md`: manifests الرسمية ونتيجة دعم Flutter Linux ARM64.
 - `docs/ANDROID_SDK_LICENSE_REVIEW.md`: نص الترخيص الذي قُبل وملخصه، مع حالة التراخيص الأخرى.
 - `docs/MASTER_BLUEPRINT.md`: المواصفات الأصلية.

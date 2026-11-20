@@ -1,0 +1,180 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main, task02-github-ci]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-ci:
+    name: Flutter and Android toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      # actions/checkout v7.0.1, GitHub-verified release commit.
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # actions/setup-java v6.3.0, GitHub-verified release commit.
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
+        with:
+          distribution: temurin
+          java-version: '21.0.13+9'
+
+      - name: Accept the approved Android SDK license and install required packages
+        shell: bash
+        env:
+          ANDROID_SDK_LICENSE_HASH: '24333f8a63b6825ea9c5514f83c2829b004d1fee'
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?GitHub runner did not define ANDROID_HOME}"
+          test -d "$ANDROID_HOME/cmdline-tools"
+
+          # User-approved receipt for android-sdk-license only. Do not run
+          # sdkmanager --licenses or auto-accept any other SDK license.
+          license_dir="$ANDROID_HOME/licenses"
+          license_file="$license_dir/android-sdk-license"
+          mkdir -p "$license_dir"
+          touch "$license_file"
+          if ! grep -Fxq "$ANDROID_SDK_LICENSE_HASH" "$license_file"; then
+            printf '%s\n' "$ANDROID_SDK_LICENSE_HASH" >> "$license_file"
+          fi
+
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$sdkmanager" ]]; then
+            sdkmanager="$(find "$ANDROID_HOME/cmdline-tools" -type f -path '*/bin/sdkmanager' -print -quit)"
+          fi
+          if [[ -z "$sdkmanager" || ! -x "$sdkmanager" ]]; then
+            echo 'sdkmanager was not found under ANDROID_HOME/cmdline-tools.' >&2
+            exit 1
+          fi
+
+          printf 'sdkmanager executable: %s\n' "$sdkmanager"
+          printf 'sdkmanager version: '
+          "$sdkmanager" --version
+          "$sdkmanager" --sdk_root="$ANDROID_HOME" --channel=0 --install \
+            'platforms;android-36' \
+            'build-tools;36.1.0' \
+            'platform-tools'
+          "$sdkmanager" --sdk_root="$ANDROID_HOME" --list_installed | tee "$RUNNER_TEMP/android-sdk-installed.txt"
+          grep -F 'platforms;android-36' "$RUNNER_TEMP/android-sdk-installed.txt"
+          grep -F 'build-tools;36.1.0' "$RUNNER_TEMP/android-sdk-installed.txt"
+          grep -F 'platform-tools' "$RUNNER_TEMP/android-sdk-installed.txt"
+          grep -F 'Pkg.Revision=2' "$ANDROID_HOME/platforms/android-36/source.properties"
+          grep -F 'Pkg.Revision=36.1.0' "$ANDROID_HOME/build-tools/36.1.0/source.properties"
+          grep -F 'Pkg.Revision=' "$ANDROID_HOME/platform-tools/source.properties"
+          printf 'Accepted Android SDK license IDs: '
+          find "$license_dir" -maxdepth 1 -type f -printf '%f ' | sort
+          printf '\n'
+
+      - name: Download and verify official Flutter Stable 3.50.0 for Linux x64
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest_url='https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json'
+          expected_sha256='6ea2d806fd57269ae783e6788e2a81fc26eaad782f1e0d0ff38623bb765ff9f5'
+          expected_archive='stable/linux/flutter_linux_3.50.0-stable.tar.xz'
+          metadata_file="$RUNNER_TEMP/flutter-metadata.txt"
+
+          python3 - "$manifest_url" "$expected_sha256" "$expected_archive" > "$metadata_file" <<'PY'
+          import json
+          import sys
+          import urllib.request
+
+          manifest_url, expected_sha256, expected_archive = sys.argv[1:]
+          with urllib.request.urlopen(manifest_url, timeout=60) as response:
+              manifest = json.load(response)
+
+          matches = [item for item in manifest['releases'] if item['channel'] == 'stable' and item['version'] == '3.50.0']
+          if len(matches) != 1:
+              raise SystemExit(f'Expected one Flutter stable 3.50.0 record, found {len(matches)}')
+          release = matches[0]
+          if release['dart_sdk_arch'] != 'x64':
+              raise SystemExit(f"Expected Linux x64 Dart, got {release['dart_sdk_arch']}")
+          if release['archive'] != expected_archive or release['sha256'] != expected_sha256:
+              raise SystemExit('Official Flutter manifest archive or SHA-256 changed; review before updating the pin.')
+
+          print(manifest['base_url'])
+          print(release['archive'])
+          print(release['sha256'])
+          print(release['version'])
+          print(release['dart_sdk_version'])
+          PY
+          mapfile -t flutter_metadata < "$metadata_file"
+          base_url="${flutter_metadata[0]}"
+          archive="${flutter_metadata[1]}"
+          sha256="${flutter_metadata[2]}"
+          version="${flutter_metadata[3]}"
+          dart_version="${flutter_metadata[4]}"
+          archive_path="$RUNNER_TEMP/flutter.tar.xz"
+          install_dir="$RUNNER_TEMP/flutter-sdk"
+
+          curl --fail --location --retry 3 "$base_url/$archive" --output "$archive_path"
+          echo "$sha256  $archive_path" | sha256sum --check
+          mkdir -p "$install_dir"
+          tar -xf "$archive_path" -C "$install_dir" --strip-components=1
+          echo "$install_dir/bin" >> "$GITHUB_PATH"
+          export PATH="$install_dir/bin:$PATH"
+          flutter precache --android
+          flutter --version
+          dart --version
+          file "$install_dir/bin/cache/dart-sdk/bin/dart"
+          printf 'Verified Flutter %s with Dart %s from the official Linux x64 manifest.\n' "$version" "$dart_version"
+
+      - name: Verify Java and Android toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          uname -m
+          java -version
+          printf 'JAVA_HOME=%s\nANDROID_HOME=%s\n' "$JAVA_HOME" "$ANDROID_HOME"
+          flutter doctor -v
+          if command -v gradle >/dev/null 2>&1; then
+            gradle --version
+          else
+            echo 'Global Gradle executable not present; no project Gradle wrapper exists yet.'
+          fi
+          if command -v kotlinc >/dev/null 2>&1; then
+            kotlinc -version
+          else
+            echo 'Standalone Kotlin compiler not present; project Kotlin Gradle Plugin remains undefined.'
+          fi
+
+      - name: Project analysis, tests, and debug APK
+        if: ${{ hashFiles('pubspec.yaml') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+          flutter build apk --debug
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Report that project checks are not applicable yet
+        if: ${{ hashFiles('pubspec.yaml') == '' }}
+        shell: bash
+        run: |
+          echo '::notice::No pubspec.yaml exists in this repository. Flutter analysis, tests, and APK build are explicitly skipped; this is a toolchain check only.'
+
+      # actions/upload-artifact v7.0.2, GitHub-verified release commit.
+      - name: Upload debug APK artifact
+        if: ${{ success() && hashFiles('pubspec.yaml') != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: telemanager-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

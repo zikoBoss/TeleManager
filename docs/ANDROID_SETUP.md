@@ -1,10 +1,10 @@
 # إعداد Flutter وKotlin وAndroid SDK
 
-## الحالة الحالية — 2026-11-19
+## الحالة الحالية — 2026-11-20
 
 المضيف Ubuntu 24.04 بمعمارية `aarch64`/ARM64. Android SDK Command-line Tools الرسمية موجودة في `/home/ubuntu/Android/Sdk/cmdline-tools/latest`، و`sdkmanager --version` يعيد `22.0`. Flutter وDart وGradle وKotlin compiler غير متاحين على `PATH`. لم يُنشأ scaffold Flutter، ولم تُنفذ `flutter doctor` أو `flutter analyze` أو `flutter test` أو عملية بناء APK.
 
-المستودع المحلي مهيأ، لكن لا يوجد commit أو remote؛ لم يُنشأ مستودع GitHub. تمت دراسة GitHub Actions كخيار خارجي فقط، دون إنشاء workflow أو تنفيذ بناء. التفاصيل في [تقرير المهمة 02](TASK02_STATUS_2026-11-19.md).
+المستودع العام له commit تأسيسي `a70a106` على `main`، والعمل اللاحق محصور في `task02-github-ci`. أُنشئ workflow على الفرع لإعداد runner x64؛ لم يُنشأ scaffold Flutter بعد. توثيق البيئة الخارجية في [GitHub Actions](GITHUB_ACTIONS.md)، والنتائج الفعلية في [تقرير المهمة 02](TASK02_STATUS_2026-11-19.md).
 
 ## دعم Flutter على مضيف Linux ARM64
 
@@ -20,7 +20,7 @@
 
 ملف `/home/ubuntu/Android/Sdk/platforms/android-36/android.jar` موجود واجتاز `unzip -t` دون أخطاء. بصمات SHA-256 لبعض الملفات محفوظة في تقرير المهمة 02 كسجل محلي للمقارنة، وليست مقارنةً مستقلة ببصمات أرشيفات Google الرسمية.
 
-قُبل `android-sdk-license` وحده. بقيت سبعة تراخيص أخرى غير مقبولة وفق سجل التثبيت؛ لا يُفترض أن موافقة المستخدم على الترخيص في Sandbox تمتد إلى أي runner خارجي. نص الترخيص المقبول وملخصه موثقان في [`ANDROID_SDK_LICENSE_REVIEW.md`](ANDROID_SDK_LICENSE_REVIEW.md).
+قُبل `android-sdk-license` وحده في Sandbox، وبقيت سبعة تراخيص أخرى غير مقبولة محليًا. وافق المستخدم لاحقًا موافقة منفصلة على قبول هذا الترخيص وحده في runner مؤقت للحزم الثلاث؛ يسجل workflow ذلك دون تشغيل `sdkmanager --licenses` أو قبول تراخيص أخرى. نص الترخيص وملخصه وسجل الموافقات في [`ANDROID_SDK_LICENSE_REVIEW.md`](ANDROID_SDK_LICENSE_REVIEW.md).
 
 أظهر `file` أن الملفات التنفيذية `adb` و`aapt` و`aapt2` هي ELF x86-64. لم تُشغّل على مضيف ARM64، ولذلك لا تعني حالة “مثبت” أنها قابلة للاستخدام على هذا المضيف. `android.jar` وmetadata موجودان، لكن أدوات البناء المطلوبة ليست صالحة للتشغيل هنا. لم يُطلب أو يثبت Emulator أو NDK أو CMake.
 
@@ -36,11 +36,15 @@
 
 على Linux x86-64 يقرأ السكربت manifest ويختار إصدار Flutter stable الحالي وقت التشغيل ويتحقق من SHA-256 قبل فك الحزمة، ثم يضيف مسارات Flutter وCommand-line Tools و`platform-tools` إلى PATH ويشغّل `flutter --version`. لكنه لا يثبت حزم Android Platform أو Build-Tools أو Platform-Tools نفسها، ولا يقبل التراخيص، ولا ينشئ scaffold أو يشغّل التحليل والاختبارات أو يبني APK. كما أن اختيار Flutter فيه يتبع أحدث stable في manifest وقت التشغيل وليس إصدارًا ثابتًا محددًا للمشروع.
 
+## بيئة GitHub Actions على Linux x64
+
+يستخدم `.github/workflows/android-ci.yml` runner `ubuntu-24.04`، ويثبت Temurin JDK `21.0.13+9` وFlutter Stable `3.50.0` Linux x64 مع التحقق من SHA-256 الرسمي. يضيف workflow سجل `android-sdk-license` المصرح به فقط، ثم يثبت أو يتحقق من `platforms;android-36` و`build-tools;36.1.0` و`platform-tools`. تفاصيل الإصدارات ومراجع صور GitHub المستضافة وحدود تشغيل التحليل والبناء في [`GITHUB_ACTIONS.md`](GITHUB_ACTIONS.md). إعداد الـrunner لا يغير `ANDROID_HOME` أو ملفات Sandbox الحالية.
+
 ## Kotlin وGradle والتحقق اللاحق
 
 لا يحتوي المستودع حاليًا على `pubspec.yaml` أو `android/gradlew` أو `gradle-wrapper.properties` أو ملفات إعداد Gradle/Kotlin فعلية. لذلك لا توجد نسخ Kotlin Gradle Plugin أو Android Gradle Plugin أو Gradle خاصة بـ TeleManager لتدقيقها أو اعتمادها. لا تُختَر هذه الإصدارات بالتخمين؛ تُحدد بعد إنشاء scaffold رسمي على مضيف متوافق، ثم مراجعة إعداداته ومصفوفة التوافق.
 
-بعد توفر بيئة Linux x86-64 موثوقة وإنشاء scaffold، تكون خطوات التحقق المطلوبة: `dart format --output=none --set-exit-if-changed lib test`، ثم `flutter analyze` و`flutter test`، وأخيرًا `flutter build apk --debug` بعد التحقق من وجود مكونات SDK المطلوبة على مضيف البناء المتوافق والحصول على الموافقات اللازمة لتراخيصها هناك. الحزم المثبتة في Sandbox الحالية لا تجعل أدوات x86-64 قابلة للتشغيل على ARM64. لا تُسجل أي خطوة على أنها ناجحة قبل تشغيلها وتوثيق نتيجتها الفعلية.
+لا يوجد scaffold أو `pubspec.yaml` بعد. لذلك يُشغل workflow حاليًا إعداد البيئة و`flutter doctor -v` فقط، ويُظهر التحليل والاختبارات وبناء APK كخطوات متخطاة بوضوح. عند إضافة مشروع فعلي على الفرع، ينفذ `dart format --output=none --set-exit-if-changed lib test` ثم `flutter analyze` و`flutter test` و`flutter build apk --debug`، ويرفع APK كـartifact بعد نجاح البناء. الحزم المثبتة في Sandbox الحالية لا تجعل أدوات x86-64 قابلة للتشغيل على ARM64. لا تُسجل أي خطوة على أنها ناجحة قبل ظهور نتيجة تشغيلها الفعلية في Actions.
 
 ## المراجع الرسمية
 
