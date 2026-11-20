@@ -164,6 +164,13 @@ jobs:
           set -euo pipefail
           rm -rf .ci-scaffold
           flutter create --platforms=android --project-name telemanager --org com.example .ci-scaffold
+          # The Flutter template pins an NDK even though this scaffold has no native module.
+          # Keep NDK/ABI decisions deferred and avoid triggering an implicit SDK download.
+          sed -i '/^[[:space:]]*ndkVersion = flutter\.ndkVersion$/d' .ci-scaffold/android/app/build.gradle.kts
+          if grep -q 'ndkVersion' .ci-scaffold/android/app/build.gradle.kts; then
+            echo 'Unexpected NDK configuration in generated scaffold.' >&2
+            exit 1
+          fi
           test -s .ci-scaffold/pubspec.yaml
           test -s .ci-scaffold/android/app/src/main/kotlin/com/example/telemanager/MainActivity.kt
           flutter --version
@@ -192,7 +199,10 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
           if [[ "$SCAFFOLD_MODE" == 'true' ]]; then
             tar -czf "$RUNNER_TEMP/telemanager-flutter-scaffold.tar.gz" \
-              --exclude='./.dart_tool' --exclude='./build' -C "$GITHUB_WORKSPACE/$project_dir" .
+              --exclude='./.dart_tool' --exclude='./build' --exclude='./.idea' \
+              --exclude='./*.iml' --exclude='./android/local.properties' \
+              --exclude='./android/*.iml' --exclude='./.flutter-plugins-dependencies' \
+              -C "$GITHUB_WORKSPACE/$project_dir" .
           fi
           flutter analyze
           flutter test
