@@ -7,20 +7,21 @@
 - [x] تهيئة مستودع Git المحلي وإنشاء هيكل المجلدات الأولي الذي يحافظ على فصل TM-Core وTM-Cloud وTM-Sync وTM-Cache وTM-Transfer وTM-Backup وطبقة الواجهة ومزود Telegram. بعد التحقق من خلو المستودع العام، أُنشئ commit تأسيسي `a70a106` على `main`؛ جميع تغييرات المهمة 02 التالية تخص الفرع `task02-github-ci` فقط.
 - [x] وضع المخطط المرجعي في `docs/MASTER_BLUEPRINT.md` وإنشاء `PROJECT_RULES.md`.
 - [x] توثيق حدود الوحدات والعقود والقيود والبوابات المرحلية.
-- [ ] تقييم تكامل TDLib على Android في مشروع تجريبي مستقل قبل بدء المصادقة أو عمليات التخزين.
 
-## المرحلة 2 — إعداد Flutter وطبقة Android الأصلية
+## المرحلة 2 — إعداد Flutter وطبقة Android الأصلية — مكتملة (2026-11-20)
 - [x] تثبيت Android SDK Command-line Tools الرسمية والتحقق من `sdkmanager --version` (22.0).
 - [x] تهيئة `ANDROID_HOME` و`ANDROID_SDK_ROOT` في `~/.bashrc` وإضافة `cmdline-tools/latest/bin` فقط إلى PATH على ARM64؛ التحقق من ظهور `sdkmanager` ومن عدم إضافة `adb` x86-64 إلى المسار.
 - [x] فحص manifests الرسمية لـ Flutter Stable 3.50.0 على Linux وmacOS وWindows؛ سجل Linux الوحيد x64 ولا يوجد Linux ARM64، مع توثيق جميع الملفات والبصمات في `docs/FLUTTER_LINUX_ARM64_SUPPORT.md`.
-- [ ] إنشاء scaffold Flutter فعلي بمنصة Android وطبقة `MainActivity.kt` بلغة Kotlin، مع إبقاء Core مستقلًا عن Android. لا يوجد scaffold في الفرع. المضيف المحلي ARM64 ولا يستطيع تشغيل Dart الرسمي x64. أُعد workflow لاستخدام Ubuntu x64 في GitHub Actions، لكنه لا يحول ملفات الهيكل الحالية إلى تطبيق.
-- [ ] تشغيل `flutter analyze` و`flutter test` وتسجيل النتائج الفعلية، ثم بناء APK تجريبي. سيجري workflow هذه الخطوات فقط إذا وجد `pubspec.yaml`؛ وإلا تظهر كخطوات متخطاة بوضوح. وافق المستخدم منفصلًا على قبول `android-sdk-license` وحده على runner للحزم الثلاث؛ لا تقبل التراخيص الأخرى.
+- [x] إنشاء scaffold Flutter رسمي Android-only على runner x64 بعد التحقق من الأدوات، ونقل ملفات Flutter و`MainActivity.kt` إلى الفرع. `applicationId` الافتراضي `com.example.telemanager` مؤقت؛ لم تُنفذ ميزات TeleManager أو تغير المعمارية.
+- [x] تنفيذ `flutter doctor -v` و`dart format` و`flutter analyze` و`flutter test` وبناء APK debug على commit المشروع `d8d26fb` في run `44744990391`. التحليل بلا مشاكل، واختبار widget واحد نجح، وAPK اجتاز `unzip -t`. سجل NDK يوضح تنزيل `28.2` تلقائيًا من Gradle رغم غياب pin في المشروع؛ لم يقبل workflow ترخيصًا إضافيًا.
 - [x] تثبيت `platforms;android-36` revision 2 (API 36)، و`build-tools;36.1.0`، و`platform-tools` 37.0.3 بعد موافقة المستخدم على `android-sdk-license` وحده. تتفق إصدارات `sdkmanager --list_installed` و`source.properties` و`package.xml`؛ و`android.jar` يجتاز `unzip -t`. أظهر `file` أن `adb` و`aapt` و`aapt2` ELF x86-64، فلم تُشغّل على ARM64. حالة التثبيت لا تعني قابلية تشغيل أدواتها على هذا المضيف.
 - [x] إنشاء `.github/workflows/android-ci.yml` على الفرع المخصص، وتوثيق الإعداد في `docs/GITHUB_ACTIONS.md` و`docs/BUILD_ENVIRONMENT.md`. اكتمل التشغيل الفعلي `44737667246` بنتيجة نجاح لفحص البيئة؛ بقيت التحذيرات التي تخص التراخيص الأخرى وأدوات Linux desktop ظاهرة.
-- [x] توثيق نتائج Flutter وJava وAndroid SDK الفعلية في `docs/ANDROID_SETUP.md`. أظهر runner العام Gradle 9.9.1 و`kotlinc-jvm` 2.4.21، لكن لا توجد إصدارات wrapper أو AGP أو Kotlin Gradle Plugin خاصة بالمشروع قبل إنشاء scaffold ومراجعته.
-- [x] تحديث تقرير المهمة وREADME بعد تشغيل Actions. لا تزال المهمة 02 مفتوحة لأن scaffold و`flutter analyze` والاختبارات وبناء APK لم تُنجز.
+- [x] مراجعة القيم التي ولّدها scaffold: Gradle wrapper 9.5.0، AGP 9.3.1، Kotlin Gradle Plugin 2.4.20، وJava/Kotlin target 17؛ سُجلت كإعدادات قالب لا كقرارات إنتاج معتمدة.
+- [x] تحديث README وتقارير Android/CI والمعمارية وتقرير المهمة بنتائج فعلية قابلة للتحقق، مع إبقاء `main` دون دمج.
+
+## بوابة ما قبل المرحلة 03 — تقييم TDLib (لم تبدأ)
 - [ ] دراسة ربط TDLib عبر Android الأصلي/JNI أو آلية موثوقة قبل الالتزام بها.
-- [ ] تقييم الحزم الجاهزة لـ TDLib من حيث المصدر والترخيص والإصدار ودعم ABI وتوافق Android وسجل التحديث؛ إن لم يوجد خيار مناسب، توثيق وإعادة إنتاج بناء المصدر مع إصدار TDLib وNDK/CMake والأعلام وABI المدعومة.
+- [ ] تقييم الحزم الجاهزة لـTDLib من حيث المصدر والترخيص والإصدار ودعم ABI وتوافق Android وسجل التحديث؛ إن لم يوجد خيار مناسب، توثيق وإعادة إنتاج بناء المصدر مع إصدار TDLib وNDK/CMake والأعلام وABI المدعومة.
 
 ## المرحلة 3 — TDLib والمصادقة
 - [ ] تنفيذ المصادقة بالتسلسل: رقم الهاتف، رمز التحقق، كلمة مرور التحقق بخطوتين عند الطلب، ثم انتظار `authorizationStateReady`.

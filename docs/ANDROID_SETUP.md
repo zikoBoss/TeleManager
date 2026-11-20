@@ -1,59 +1,53 @@
 # إعداد Flutter وKotlin وAndroid SDK
 
-## الحالة الحالية — 2026-11-20
+## الحالة المحلية — Sandbox ARM64
 
-على Sandbox المحلية يعمل Ubuntu 24.04 بمعمارية `aarch64`/ARM64. Android SDK Command-line Tools الرسمية موجودة في `/home/ubuntu/Android/Sdk/cmdline-tools/latest`، و`sdkmanager --version` يعيد `22.0`. Flutter وDart وGradle وKotlin compiler غير متاحة محليًا على `PATH`. لم يُنشأ scaffold Flutter محليًا، ولم تُنفذ عليه `flutter doctor` أو `flutter analyze` أو `flutter test` أو عملية بناء APK.
+المضيف المحلي Ubuntu 24.04 بمعمارية `aarch64`. Android SDK Command-line Tools الرسمية في `/home/ubuntu/Android/Sdk/cmdline-tools/latest` (`sdkmanager` `22.0`). Flutter وDart غير متاحين على `PATH` محليًا، ولم تُشغّل أدوات Flutter أو APK على ARM64.
 
-أُنشئ commit تأسيسي `a70a106` على `main`، ثم رُفع الفرع `task02-github-ci` وفيه commit إعداد CI `cac20ad`. بقي `main` دون تحديث بعد نقطة التأسيس. اكتمل أول تشغيل GitHub Actions بنجاح كفحص بيئة الأدوات فقط؛ نتائجه التفصيلية في [تقرير المهمة 02](TASK02_STATUS_2026-11-19.md) و[وثيقة GitHub Actions](GITHUB_ACTIONS.md).
+حزم Android المحلية المثبتة بعد الموافقة هي `platforms;android-36` revision 2 و`build-tools;36.1.0` و`platform-tools` revision `37.0.3`. قُبل `android-sdk-license` وحده. أظهر `file` أن `adb` و`aapt` و`aapt2` x86-64؛ لا يمكن تشغيلها على ARM64. `android.jar` موجود واجتاز `unzip -t`. لم يثبت Emulator أو NDK أو CMake يدويًا على Sandbox.
 
-## دعم Flutter على مضيف Linux ARM64
+## بيئة GitHub Actions x64
 
-تُظهر manifests الرسمية التي فُحصت لإصدار Flutter Stable 3.50.0 أن سجل Linux الوحيد يستخدم `dart_sdk_arch: x64`، ولا يوجد سجل Linux ARM64. السجل ARM64 للإصدار نفسه يخص macOS. في فحص سابق للحزمة الرسمية على Linux، كان Dart المضمّن ELF x86-64 وفشل تشغيله على ARM64 برسالة `Exec format error`. لم يُنزّل Flutter إلى Sandbox الحالية. تفاصيل السجلات وروابط الأرشيفات وSHA-256 في [`FLUTTER_LINUX_ARM64_SUPPORT.md`](FLUTTER_LINUX_ARM64_SUPPORT.md). [6] [7]
+يستخدم workflow runner `ubuntu-24.04` بمعمارية x64. أثبت [تشغيل إعداد الأدوات 44740810758](https://github.com/zikoBoss/TeleManager/actions/runs/44740810758) و[تشغيل المشروع 44744990391](https://github.com/zikoBoss/TeleManager/actions/runs/44744990391) الإصدارات التالية:
 
-## حزم Android SDK المثبتة محليًا
+- Ubuntu `24.04.5`، ومعمارية `x86_64`.
+- Temurin JDK `21.0.13+9`.
+- Flutter Stable `3.50.0`، وDart `3.14.0` بعد التحقق من archive الرسمي وSHA-256.
+- Android Command-line Tools / `sdkmanager` `12.0`.
+- `platforms;android-36` revision 2، و`build-tools;36.1.0`، و`platform-tools` `37.0.3`.
 
-وافق المستخدم على نطاق الحزم الثلاث التالية، ثم وافق على قبول `android-sdk-license` وحده في Sandbox. أظهر `sdkmanager --list_installed` وملفات `source.properties` و`package.xml` الحالات التالية:
+يقبل workflow `android-sdk-license` وحده، ولا يشغّل `sdkmanager --licenses`. أظهر `flutter doctor -v` تحذير تراخيص Android أخرى غير مقبولة، إضافة إلى تحذيرات GTK و`eglinfo` الخاصة بتطوير Linux desktop. لم تُخفَ التحذيرات.
 
-- `platforms;android-36`، revision `2` (API 36)، في `/home/ubuntu/Android/Sdk/platforms/android-36`.
-- `build-tools;36.1.0` في `/home/ubuntu/Android/Sdk/build-tools/36.1.0`.
-- `platform-tools`، revision `37.0.3`، في `/home/ubuntu/Android/Sdk/platform-tools`.
+## scaffold وإعداد Gradle/Kotlin
 
-ملف `/home/ubuntu/Android/Sdk/platforms/android-36/android.jar` موجود واجتاز `unzip -t` دون أخطاء. بصمات SHA-256 لبعض الملفات محفوظة في تقرير المهمة 02 كسجل محلي للمقارنة، وليست مقارنةً مستقلة ببصمات أرشيفات Google الرسمية.
+وُلّد مشروع Android-only بـFlutter 3.50.0 على x64، ثم نُقل إلى الفرع. يحتوي على `lib/main.dart` و`test/widget_test.dart` و`android/app/src/main/kotlin/com/example/telemanager/MainActivity.kt` وGradle wrapper. ليس فيه بعد TM-Core أو TDLib أو Drift أو Riverpod أو GoRouter أو واجهة TeleManager فعلية.
 
-قُبل `android-sdk-license` وحده في Sandbox، وبقيت سبعة تراخيص أخرى غير مقبولة محليًا. وافق المستخدم لاحقًا بصورة منفصلة على قبول الترخيص نفسه وحده في runner مؤقت للحزم الثلاث؛ وأكد سجل التشغيل أن اسم الترخيص الوحيد في مجلد `licenses` هو `android-sdk-license`. لم يُشغّل workflow الأمر `sdkmanager --licenses` ولم يقبل تراخيص أخرى. نص الترخيص وملخصه وسجل الموافقات في [`ANDROID_SDK_LICENSE_REVIEW.md`](ANDROID_SDK_LICENSE_REVIEW.md).
+قيم scaffold الحالية التي أظهرها التشغيل: Android Gradle Plugin `9.3.1`، Kotlin Gradle Plugin `2.4.20`، Gradle wrapper `9.5.0`، وهدف bytecode Java/Kotlin `17`. Kotlin المضمّن في Gradle `9.5.0` هو `2.3.20`، وهو غير نسخة Kotlin Gradle Plugin. هذه الإعدادات جاءت من Flutter 3.50.0 template، وليست قرارات أُقرت قبل التوليد. `applicationId` هو `com.example.telemanager` المؤقت، ويجب استبداله بمعرّف يعتمد لاحقًا قبل النشر.
 
-أظهر `file` أن الملفات التنفيذية `adb` و`aapt` و`aapt2` هي ELF x86-64. لم تُشغّل على مضيف ARM64، ولذلك لا تعني حالة “مثبت” أنها قابلة للاستخدام على هذا المضيف. `android.jar` وmetadata موجودان، لكن أدوات البناء المطلوبة ليست صالحة للتشغيل هنا. لم يُطلب تثبيت Emulator أو NDK أو CMake في Sandbox.
+لم يثبت scaffold إصدار NDK في Gradle. مع ذلك، أظهر build أن Gradle نزّل NDK Side by side `28.2` (`r28c`) تلقائيًا. لم يطلبه workflow صراحة في خطوة `sdkmanager --install` ولم يظهر قبول ترخيص إضافي؛ بقي `android-sdk-license` وحده في نتيجة خطوة قبول الترخيص. راجع سجل التشغيل قبل إدخال أي اعتماد native.
 
-ضُبط `ANDROID_HOME` و`ANDROID_SDK_ROOT` في `~/.bashrc` وأضيف `cmdline-tools/latest/bin` فقط إلى `PATH`. Java OpenJDK `21.0.12.1` مثبتة وتعمل على AArch64. لم تُضف مجلدات `platform-tools` أو `build-tools` إلى `PATH` على هذا المضيف.
+## النتائج الفعلية
 
-## مراجعة `scripts/setup_toolchain.sh`
+في [run 44744990391](https://github.com/zikoBoss/TeleManager/actions/runs/44744990391)، على الملفات المضافة فعليًا إلى commit `d8d26fb`:
 
-راجعنا السكربت بقراءة الشيفرة فقط؛ لم نشغّله في جولة التدقيق لأن بدايته تنفذ `apt-get update` وتثبت حزم نظام وقد تنزّل أدوات عند غيابها.
+- نجح `flutter doctor -v` مع التحذيرات المسجلة.
+- نجح تنسيق `dart format --output=none --set-exit-if-changed lib test` دون تعديل ملفات.
+- نجح `flutter analyze` ولم يعثر على مشاكل.
+- نجح `flutter test` باختبار widget واحد من القالب الافتراضي.
+- نجح `flutter build apk --debug` ورفع artifact.
 
-على ARM64 ينفذ السكربت أولاً `apt-get update` وتثبيت متطلبات النظام (`curl`, `git`, `unzip`, `xz-utils`, `zip`, `libglu1-mesa`). ثم يتأكد من وجود Android Command-line Tools؛ وإذا لم يوجد `sdkmanager` ينزّل حزمة Command-line Tools Linux المحددة، ويتحقق من SHA-256 الرسمي ويفكها. بعد ذلك يقرأ `uname -m`، ويطبع رسالة العائق ويخرج بالرمز `2` في فرع `aarch64|arm64`.
+تقرير الأدلة وبصمة APK في [`TASK02_STATUS_2026-11-19.md`](TASK02_STATUS_2026-11-19.md). المهمة 02 مكتملة، ولم تبدأ المرحلة 03 أو يحصل دمج إلى `main`.
 
-بسبب الخروج المبكر، لا يصل السكربت على ARM64 إلى قراءة manifest Flutter أو تنزيل Flutter أو تثبيته، ولا يصل إلى إعداد أسطر `ANDROID_HOME` و`ANDROID_SDK_ROOT` و`PATH` في `.bashrc` أو تنفيذ `flutter --version`. ولا يثبت `platforms;android-36` أو `build-tools;36.1.0` أو `platform-tools`، ولا يقبل تراخيص Android SDK، ولا ينشئ مشروع Flutter أو يشغل التحليل أو الاختبارات أو بناء APK. لذا فإن تشغيله لا يكمل إعداد Android على ARM64، حتى لو كانت Command-line Tools موجودة.
+## `scripts/setup_toolchain.sh`
 
-على Linux x86-64 يقرأ السكربت manifest ويختار إصدار Flutter stable الحالي وقت التشغيل ويتحقق من SHA-256 قبل فك الحزمة، ثم يضيف مسارات Flutter وCommand-line Tools و`platform-tools` إلى PATH ويشغّل `flutter --version`. لكنه لا يثبت حزم Android Platform أو Build-Tools أو Platform-Tools نفسها، ولا يقبل التراخيص، ولا ينشئ scaffold أو يشغّل التحليل والاختبارات أو يبني APK. كما أن اختيار Flutter فيه يتبع أحدث stable في manifest وقت التشغيل وليس إصدارًا ثابتًا محددًا للمشروع.
+السكربت لم يُشغّل في جولة التدقيق؛ تمت مراجعته ساكنًا. على ARM64 ينفذ `apt-get update` ويثبت متطلبات نظام، ويتحقق من Command-line Tools وقد ينزلها إذا غابت، ثم يخرج بالرمز `2` قبل تنزيل Flutter أو تحديث `.bashrc` أو تثبيت حزم منصات SDK أو قبول التراخيص أو إنشاء المشروع أو اختبار/بناء APK. لذلك تشغيله لا يكمل إعداد Android على ARM64.
 
-## نتائج GitHub Actions الفعلية
+على Linux x86-64 ينزّل السكربت Flutter Stable المتغير وقت التشغيل بعد التحقق من SHA، ويضيف المسارات إلى PATH ويشغّل `flutter --version`. لكنه لا يثبت حزم Android المطلوبة، ولا يقبل التراخيص، ولا ينشئ scaffold أو يشغّل التحليل والاختبار أو يبني APK.
 
-اكتمل التشغيل [44737667246](https://github.com/zikoBoss/TeleManager/actions/runs/44737667246) بتاريخ 2026-11-20 بنتيجة `success` على Ubuntu `24.04.5` بمعمارية `x86_64` وصورة runner `20261116.133.1`. أظهر السجل Command-line Tools `12.0`، وTemurin JDK `21.0.13+9`، وFlutter Stable `3.50.0`، وDart `3.14.0`، مع تطابق SHA-256 الرسمي. وأكد وجود `platforms;android-36` revision `2` و`build-tools;36.1.0` و`platform-tools` `37.0.3`.
-
-أظهر `flutter doctor -v` تحذيرًا عن تراخيص Android أخرى لم تُقبل لأن الموافقة اقتصرَت على `android-sdk-license`. كما أظهر أن GTK و`eglinfo` غير متاحين لتطوير Linux desktop. بقي التحذيران ظاهرين ولم يُقبل ترخيص إضافي. كانت صورة runner تحتوي حزم SDK مسبقة أخرى منها NDK وCMake؛ لم يطلب workflow تثبيتها أو قبول تراخيصها. معلومات التشغيل محفوظة في [GITHUB_ACTIONS.md](GITHUB_ACTIONS.md).
-
-## Kotlin وGradle والتحقق اللاحق
-
-لا يحتوي المستودع حاليًا على `pubspec.yaml` أو `android/gradlew` أو `gradle-wrapper.properties` أو ملفات إعداد Gradle/Kotlin فعلية. أظهر runner العام `Gradle 9.9.1` و`kotlinc-jvm 2.4.21`؛ هذه ليست نسخًا خاصة بمشروع TeleManager. لا توجد نسخ `Kotlin Gradle Plugin` أو `Android Gradle Plugin` أو Gradle خاصة بالمشروع لتدقيقها أو اعتمادها. لا تُختَر هذه الإصدارات بالتخمين؛ تُحدد بعد إنشاء scaffold رسمي على مضيف متوافق ومراجعة إعداداته ومصفوفة التوافق.
-
-كانت خطوة التحليل والاختبارات وبناء APK وخطوة رفع artifact بحالة `skipped` لأن المستودع لا يحتوي `pubspec.yaml`. لم تُنفذ `flutter analyze` أو `flutter test` ولم يُبن APK. بذلك يثبت التشغيل إعداد بيئة الأدوات فقط، ولا يثبت جاهزية مشروع Android للبناء. المهمة 02 ما زالت مفتوحة.
-
-## المراجع الرسمية
+## مراجع
 
 [1]: https://docs.flutter.dev/install/manual "Install Flutter manually"
 [2]: https://docs.flutter.dev/platform-integration/android/setup "Set up Android development"
 [3]: https://developer.android.com/studio "Android Studio and SDK command-line tools downloads"
 [4]: https://docs.flutter.dev/reference/create-new-app "Create a new Flutter app"
-[5]: https://docs.flutter.dev/release/breaking-changes/kotlin-version "Required Kotlin version"
-[6]: https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json "Official Flutter Linux release manifest"
-[7]: https://docs.flutter.dev/install/archive "Flutter SDK archive and architecture metadata"
+[5]: https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json "Official Flutter Linux release manifest"

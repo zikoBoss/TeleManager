@@ -1,53 +1,39 @@
 # GitHub Actions — Flutter وAndroid CI
 
-## النطاق والحالة
+## النطاق والسلوك
 
-يعمل workflow الموجود في [`.github/workflows/android-ci.yml`](../.github/workflows/android-ci.yml) على `ubuntu-24.04` المستضاف من GitHub، وهو runner Linux x64. يهيئ أدوات المرحلة الثانية، ويتحقق من SDK، ثم يشغّل تحليل Dart واختبارات Flutter وبناء APK debug فقط إذا وجد `pubspec.yaml` في المستودع. إذا لم يوجد scaffold Flutter، تظهر ملاحظة صريحة وتظل خطوات التحليل والاختبار والبناء متخطاة؛ نجاح فحص البيئة لا يعني أن TeleManager صار تطبيقًا قابلًا للبناء.
+يعمل [`.github/workflows/android-ci.yml`](../.github/workflows/android-ci.yml) على GitHub-hosted `ubuntu-24.04` runner. يهيئ Java وAndroid SDK وFlutter Stable، ويتحقق من الأدوات، ثم يشغّل `flutter pub get` و`dart format` و`flutter analyze` و`flutter test` وبناء APK debug عند وجود `pubspec.yaml`.
 
-لا يحتوي الفرع على `pubspec.yaml` أو `android/gradlew` أو إعدادات AGP/Kotlin/Gradle خاصة بالمشروع. لذلك لا تُثبت هذه الإعدادات بالتخمين، ولا تُعد الأدوات العامة المثبتة في صورة runner بديلًا عن wrapper وإعدادات المشروع.
+يقبل `workflow_dispatch` خيارًا اختياريًا اسمه `generate_scaffold`. إذا اختير، يولّد workflow مشروع Android-only مؤقتًا على runner بعد التحقق من البيئة، ثم يشغّل عليه الفحوص ويرفع scaffold وAPK كـartifacts لمدة 7 أيام. لا يضيف الملفات إلى Git أو يدفعها تلقائيًا. صلاحيات workflow تبقى `contents: read` فقط.
 
-## إصدارات البيئة المثبتة
+## إصدارات البيئة
 
-يستخدم workflow إصدار Flutter Stable `3.50.0` الرسمي لمضيف Linux x64، وإصدار Dart `3.14.0`. قبل التنزيل، يقرأ manifest الرسمي ويتأكد من الإصدار والقناة والمعمارية ومسار archive وبصمة SHA-256 التالية. [5]
+يقرأ workflow manifest Flutter الرسمي ويثبت Stable `3.50.0` لمضيف Linux x64 مع Dart `3.14.0`. يتحقق من SHA-256 قبل فك archive:
 
 ```text
 stable/linux/flutter_linux_3.50.0-stable.tar.xz
 6ea2d806fd57269ae783e6788e2a81fc26eaad782f1e0d0ff38623bb765ff9f5
 ```
 
-يُثبَّت Temurin JDK `21.0.13+9` عبر `actions/setup-java` الرسمي. ويُفحص `flutter doctor -v` ونسخة Java وAndroid SDK أثناء كل تشغيل.
-
-تتضمن صورة GitHub Actions `ubuntu-24.04` Android Command-line Tools. يطلب workflow عبر `sdkmanager` الحزم الثلاث المحددة فقط: `platforms;android-36` revision `2`، و`build-tools;36.1.0`، و`platform-tools` revision `37.0.3`، ويتحقق من وجودها في قائمة الحزم المثبتة وملفات `source.properties`. إصدارات الصورة المستضافة تتغير؛ سجل التشغيل الفعلي هو المرجع لكل run. [1]
+يستخدم Temurin JDK `21.0.13+9`. يطلب `sdkmanager` الحزم التالية فقط في خطوة الإعداد ويتحقق من إصداراتها: `platforms;android-36` revision 2، `build-tools;36.1.0`، و`platform-tools` revision `37.0.3`.
 
 ## موافقة Android SDK
 
-وافق المستخدم صراحةً على قبول `android-sdk-license` وحده في runner مؤقت، لتثبيت `platforms;android-36` و`build-tools;36.1.0` و`platform-tools`. يضيف workflow hash المقبول `24333f8a63b6825ea9c5514f83c2829b004d1fee` إلى ملف هذا الترخيص فقط. لا ينفذ `sdkmanager --licenses` ولا يستخدم `yes` لقبول بقية التراخيص. إذا تغير الترخيص أو تطلبت الحزم ترخيصًا آخر، يتوقف التثبيت إلى حين مراجعة وموافقة منفصلة.
+وافق المستخدم على قبول `android-sdk-license` وحده. يضيف workflow hash `24333f8a63b6825ea9c5514f83c2829b004d1fee` إلى ملف الترخيص هذا فقط، ولا يشغّل `sdkmanager --licenses` أو `yes` لقبول تراخيص إضافية. أظهر سجل التشغيل النهائي اسم هذا الترخيص وحده في خطوة إعداد SDK؛ بقي `flutter doctor -v` يحذر من تراخيص أخرى غير مقبولة.
 
-لا تُطلب أو تُستخدم أسرار GitHub أو Telegram أو مفاتيح توقيع لهذا workflow. صلاحية `GITHUB_TOKEN` محدودة إلى `contents: read`. لا ينشئ workflow إصدارًا ولا يوقع APK للنشر.
+ملاحظة بناء: في خطوة `flutter build apk --debug` نزّل Gradle تلقائيًا NDK Side by side `28.2` (`r28c`) رغم أن workflow لا يطلبه في خطوة إعداد SDK وملف المشروع لا يثبت `ndkVersion`. لا يغيّر هذا نتيجة أن workflow لم يقبل ترخيصًا إضافيًا، لكنه اعتماد عابر ظهر في سجل البناء ويجب إعادة تقييمه إذا أُضيفت شيفرة Android native.
 
-## خطوات التحقق
+لا تُستخدم أسرار Telegram أو مفاتيح توقيع. لا ينشئ workflow إصدار نشر ولا يوقّع APK release.
 
-يثبت workflow ثلاث actions رسمية إلى commit SHA كامل: `actions/checkout` v7.0.1 (`3d3c42e5aac5ba805825da76410c181273ba90b1`)، و`actions/setup-java` v6.3.0 (`d1374f8ac74474200d16ef8ecee22c7ae7a51880`)، و`actions/upload-artifact` v7.0.2 (`cf430e030ddbb5b0abf93d22962f4752f3646cd9`). [2] [3] [4]
+## الإعدادات التي ولّدها scaffold
 
-بعد تحقق الحزم، ينزل Flutter من المستودع الرسمي، ويطابق SHA-256، ثم يشغّل `flutter precache --android` و`flutter doctor -v`. عند وجود مشروع Flutter فعلي، يشغّل `flutter pub get` و`dart format` كتحقق، ثم `flutter analyze` و`flutter test` و`flutter build apk --debug`. يُرفع APK كـartifact لمدة 7 أيام فقط بعد بناء ناجح.
+سجّل runner من القالب Flutter 3.50.0: Android Gradle Plugin `9.3.1`، Kotlin Gradle Plugin `2.4.20`، وGradle wrapper `9.5.0`. Gradle نفسه أبلغ عن Kotlin مضمّن `2.3.20`. القيم ناتجة عن القالب الحالي وليست قرارات معمارية سابقة. معرّف `applicationId` الحالي `com.example.telemanager` قيمة مؤقتة من القالب.
 
-## أول تشغيل فعلي — 2026-11-20
+## نتائج التشغيل
 
-اكتمل التشغيل [44737667246](https://github.com/zikoBoss/TeleManager/actions/runs/44737667246) على commit `cac20ad419c22307fca3f9b0f4ba6be7dce0a16f` بنتيجة `success` خلال نحو 1 دقيقة و40 ثانية. [6] كان المضيف `x86_64` على Ubuntu `24.04.5`، وصورة runner `20261116.133.1`. نجحت خطوات إعداد JDK وقبول الترخيص المحدود والتحقق من حزم SDK وتنزيل Flutter والتحقق من Java/SDK. أظهر السجل `sdkmanager` 12.0 وTemurin `21.0.13+9` وFlutter `3.50.0` وDart `3.14.0`. وأكد أن الحزم المطلوبة هي API 36 revision 2 وBuild Tools 36.1.0 وPlatform Tools 37.0.3.
+- [44740810758](https://github.com/zikoBoss/TeleManager/actions/runs/44740810758): تحقق toolchain بعد إضافة خيار dispatch؛ نجح، وتخطت فحوص المشروع لعدم وجود `pubspec.yaml` آنذاك.
+- [44742740367](https://github.com/zikoBoss/TeleManager/actions/runs/44742740367): تحقق workflow المعدّل؛ نجح، وكانت فحوص المشروع متخطاة عمدًا قبل إضافة scaffold.
+- [44743248440](https://github.com/zikoBoss/TeleManager/actions/runs/44743248440): ولّد scaffold على x64؛ نجح `flutter analyze` بلا مشاكل، ونجح اختبار widget واحد، وبُني APK debug. أظهر السجل تنزيل NDK تلقائيًا، وتم تنقيح artifact من إعدادات runner المحلية وملفات IDE.
+- [44744990391](https://github.com/zikoBoss/TeleManager/actions/runs/44744990391): تحقق من الملفات الموجودة فعلًا في commit `d8d26fb` على `task02-github-ci`. نجح doctor مع تحذيرات التراخيص وLinux desktop، ثم التنسيق والتحليل والاختبار وبناء APK ورفع artifact. لم يبدأ `Generate scaffold` في هذا التشغيل لأن المشروع كان موجودًا في المصدر.
 
-أكد السجل وجود اسم ترخيص `android-sdk-license` وحده في مجلد licenses. وأظهرت صورة runner أيضًا حزم SDK إضافية موجودة مسبقًا، منها NDK وCMake ومنصات وأدوات بناء أخرى؛ لم يطلب workflow تثبيتها ولم يقبل تراخيصها. ظهرت الحزم الإضافية في سجل القائمة فقط، ولا تُعد جزءًا من نطاق إعداد workflow.
-
-عرض `flutter doctor -v` تحذيرًا بأن تراخيص Android أخرى لم تُقبل؛ هذا متوقع لأن الموافقة اقتصرت على `android-sdk-license`. كما أظهر نقص GTK ومعلومة `eglinfo` لأدوات Linux desktop، وهي غير مطلوبة لتطوير Android. اختتمت خطوة التحقق بنجاح مع إبقاء هذه التحذيرات ظاهرة، ولم تُقبل تراخيص إضافية لحلها.
-
-وجد runner أدوات عامة `Gradle 9.9.1` و`kotlinc-jvm 2.4.21`. هذه إصدارات عامة للصورة وليست إعداد مشروع TeleManager؛ لا يوجد wrapper أو `build.gradle` أو Android Gradle Plugin أو Kotlin Gradle Plugin لتدقيق التوافق معها. كذلك أظهر Flutter doctor اختيار SDK/منصة أحدث موجودة مسبقًا على الصورة، فلا ينبغي الخلط بينها وبين الحزم المحددة التي تحقق منها workflow.
-
-لم يجد التشغيل `pubspec.yaml`؛ لذلك كانت خطوة التحليل والاختبارات وبناء APK وخطوة رفع artifact بحالة `skipped`. التشغيل الناجح يثبت إعداد بيئة الأدوات فقط، ولا يثبت نجاح `flutter analyze` أو `flutter test` أو إنتاج APK. ما زالت المهمة 02 مفتوحة.
-
-## مراجع المصادر
-
-[1]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md "Ubuntu 24.04 hosted runner software"
-[2]: https://github.com/actions/checkout/releases "actions checkout releases"
-[3]: https://github.com/actions/setup-java/releases "actions setup-java releases"
-[4]: https://github.com/actions/upload-artifact/releases "actions upload-artifact releases"
-[5]: https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json "Flutter Linux stable release manifest"
-[6]: https://github.com/zikoBoss/TeleManager/actions/runs/44737667246 "Android CI run 44737667246"
+في التشغيل النهائي: `flutter analyze` أعاد `No issues found!`؛ `flutter test` أعاد `1 test passed`؛ و`flutter build apk --debug` أعاد `Built build/app/outputs/flutter-apk/app-debug.apk`. اجتاز APK فحص ZIP بعد تنزيله. بصمة الملف وتفاصيل البيئة في [`BUILD_ENVIRONMENT.md`](BUILD_ENVIRONMENT.md) و[`TASK02_STATUS_2026-11-19.md`](TASK02_STATUS_2026-11-19.md).

@@ -1,12 +1,12 @@
 # تحقق دعم Flutter Stable على مضيف Linux ARM64
 
-**تاريخ التحقق:** 2026-11-19. **الغرض:** تحديد ما إذا كان Flutter Stable 3.50.0 يوفر Flutter SDK رسميًا قابلًا للتشغيل على Linux ARM64، وتسجيل حالة Android SDK المرتبطة بالمهمة 02.
+**تاريخ التحقق:** 2026-11-19. **الغرض:** توثيق دعم Flutter Stable 3.50.0 لمضيف Linux ARM64 وحالة بيئة Android للمهمة 02.
 
 ## مصدر البيانات والمنهج
 
-فُتحت manifests الرسمية لـ Linux وmacOS وWindows، ثم استُخرجت جميع السجلات التي تطابق `channel == stable` و`version == 3.50.0`. حقل المعمارية في manifest هو `dart_sdk_arch` وحقل SHA-256 هو `sha256`. روابط الملفات أدناه مبنية من `base_url` و`archive` كما وردا في السجلات، ولم تُخمن أسماء بديلة.
+فُتحت manifests الرسمية لـ Linux وmacOS وWindows، ثم استُخرجت جميع السجلات المطابقة لـ`channel == stable` و`version == 3.50.0`. حقل المعمارية في manifest هو `dart_sdk_arch` وحقل SHA-256 هو `sha256`. روابط الملفات مبنية من `base_url` و`archive` كما وردا في السجلات.
 
-المضيف الحالي أعاد `uname -m` النتيجة `aarch64`. في فحص سابق لحزمة Flutter Linux الرسمية، أظهر `file` أن Dart المضمّن ELF x86-64، وفشل تشغيله على ARM64 برسالة `Exec format error`. أما في جولة التدقيق الحالية، فلا يوجد Flutter أو Dart على `PATH`، ولم تُجرَ محاولة تنزيل أو تثبيت لهما.
+المضيف المحلي يعيد `uname -m` النتيجة `aarch64`. في فحص الحزمة الرسمية أظهر `file` أن Dart المضمّن ELF x86-64 وفشل تشغيله على ARM64 برسالة `Exec format error`. لا يوجد Flutter أو Dart محلي على `PATH` ولم يُشغّل ملف x64 على Sandbox.
 
 ## جميع سجلات Stable 3.50.0 حسب manifests الرسمية
 
@@ -17,13 +17,17 @@
 | macOS | arm64 | `stable/macos/flutter_macos_arm64_3.50.0-stable.zip` | [تنزيل macOS ARM64](https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64_3.50.0-stable.zip) | `ed2d08a3e3c023e84cbe9316d21bd88fda6ee9552f90c1eb4da41a07c170fb35` |
 | Windows | x64 | `stable/windows/flutter_windows_3.50.0-stable.zip` | [تنزيل Windows x64](https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.50.0-stable.zip) | `35fb843409c80a1c69b64bbae1756bba437222f909622d83540e266e1759aab8` |
 
-يحتوي manifest الرسمي لـ Linux على سجل stable واحد فقط للإصدار 3.50.0، ومعماريته `x64`. لا يوجد سجل Linux ARM64؛ وسجل `arm64` المتاح يخص macOS ولا يصلح لمضيف Ubuntu. لذلك لا تتوفر في manifest الذي فُحص حزمة Flutter Stable 3.50.0 رسمية متوافقة مع مضيف Linux ARM64. لا يُستخدم تنزيل macOS ARM64 أو تعديل Dart أو تشغيل ملف x86-64 على ARM64 بديلًا عن ذلك.
+يحتوي manifest Linux على سجل Stable واحد للإصدار 3.50.0 ومعماريته x64. لا يوجد سجل Linux ARM64؛ وحزمة macOS ARM64 لا تصلح لمضيف Ubuntu. لذلك يستخدم TeleManager GitHub Actions x64، ولا يحاول تشغيل Flutter x64 على Sandbox ARM64.
 
-## حالة Android SDK والمهمة
+## حالة Android وFlutter
 
-Android SDK Command-line Tools الرسمية مثبتة في `~/Android/Sdk/cmdline-tools/latest` (`sdkmanager` 22.0). كما ثبتت `platforms;android-36` revision `2`، و`build-tools;36.1.0`، و`platform-tools` 37.0.3. قُبل ترخيص `android-sdk-license` وحده. أدوات `adb` و`aapt` و`aapt2` هي ملفات Linux x86-64، ولذلك لا يمكن تشغيلها على مضيف ARM64. Flutter غير مثبت، ولم يُنشأ مشروع Flutter أو يُبن APK.
+Android SDK المحلي مثبت: Command-line Tools في `~/Android/Sdk/cmdline-tools/latest` (`sdkmanager` 22.0)، و`platforms;android-36` revision 2، و`build-tools;36.1.0`، و`platform-tools` 37.0.3. قُبل `android-sdk-license` وحده. `adb` و`aapt` و`aapt2` ملفات Linux x86-64 ولا تعمل على ARM64.
 
-أُعد workflow لاستعمال runner Ubuntu x64 عبر GitHub Actions. في تشغيله الفعلي رقم [44737667246](https://github.com/zikoBoss/TeleManager/actions/runs/44737667246)، اكتمل إعداد الأدوات وفحصها بنجاح، بعد تنزيل Flutter Stable 3.50.0 والتحقق من SHA، والتحقق من حزم Android الموافق عليها. أكد السجل قبول `android-sdk-license` وحده على runner؛ وأظهر كذلك تحذيرًا بأن تراخيص Android الأخرى غير مقبولة، وتحذيرًا منفصلًا عن متطلبات Linux desktop. لا يغير التشغيل نتيجة دعم Flutter على مضيف Sandbox ARM64: Flutter وDart لا يزالان غير مثبتين محليًا، ولم يُنشأ مشروع Flutter أو يُبن APK. كانت خطوات التحليل والاختبارات والبناء متخطاة لعدم وجود `pubspec.yaml`. المهمة 02 تبقى مفتوحة ولا انتقال إلى المهمة 03. راجع [`ANDROID_SETUP.md`](ANDROID_SETUP.md) و[`GITHUB_ACTIONS.md`](GITHUB_ACTIONS.md) و[`TASK02_STATUS_2026-11-19.md`](TASK02_STATUS_2026-11-19.md) للتفاصيل.
+على GitHub runner x64، تحقق إعداد Java وAndroid SDK وFlutter. ولّد workflow scaffold Android-only بـFlutter 3.50.0، ثم نجح التحليل والاختبار وبناء APK على commit المشروع في [run 44744990391](https://github.com/zikoBoss/TeleManager/actions/runs/44744990391). يثبت السجل النهائي Flutter 3.50.0/Dart 3.14.0 وTemurin 21.0.13+9 وحزم Android المستهدفة، كما يسجل تحذير تراخيص Android الأخرى وLinux desktop. لم يقبل workflow ترخيصًا آخر.
+
+في تشغيل البناء نزّل Gradle تلقائيًا NDK Side by side 28.2 (`r28c`) على runner رغم عدم وجود NDK pin في ملف المشروع. لم يُنفذ ذلك على Sandbox المحلية، ولا يُعامل كقرار NDK/ABI معتمد.
+
+المهمة 02 الخاصة بإعداد البيئة وscaffold والتحقق مكتملة. Flutter غير مثبت على المضيف المحلي، ولا يعني ذلك عدم وجود scaffold في المستودع؛ الـscaffold نُقل من x64. المرحلة 03 لم تبدأ.
 
 ## المراجع الرسمية
 
