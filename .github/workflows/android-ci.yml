@@ -165,7 +165,8 @@ jobs:
           rm -rf .ci-scaffold
           flutter create --platforms=android --project-name telemanager --org com.example .ci-scaffold
           # The Flutter template pins an NDK even though this scaffold has no native module.
-          # Keep NDK/ABI decisions deferred and avoid triggering an implicit SDK download.
+          # Remove that project pin and keep NDK/ABI decisions deferred; Gradle may still
+          # resolve a default NDK during APK builds, which must remain visible in CI logs.
           sed -i '/^[[:space:]]*ndkVersion = flutter\.ndkVersion$/d' .ci-scaffold/android/app/build.gradle.kts
           if grep -q 'ndkVersion' .ci-scaffold/android/app/build.gradle.kts; then
             echo 'Unexpected NDK configuration in generated scaffold.' >&2
